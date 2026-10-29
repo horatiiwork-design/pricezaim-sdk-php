@@ -1,6 +1,6 @@
 # pricezaim PHP SDK
 
-Клиент публичного API [pricezaim](https://api.pricezaim.ru/docs) для PHP 8.2+.
+Клиент публичного API [pricezaim](https://api.pricezaim.ru/docs) для PHP 8.5+.
 Работает через Guzzle, авторизуется по `X-API-Key`, поддерживает аукционы,
 ставки, сделки и вебхуки.
 
