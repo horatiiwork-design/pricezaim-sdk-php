@@ -6,21 +6,11 @@
 
 ## Установка
 
-После публикации в Packagist:
 
 ```bash
 composer require pricezaim/sdk
 ```
 
-До публикации пакет можно подключить напрямую из репозитория:
-
-```bash
-composer config repositories.pricezaim vcs https://github.com/horatiiwork-design/pricezaim-sdk-php.git
-composer require pricezaim/sdk:dev-main
-```
-
-Для приватного GitHub-репозитория Composer нужен токен с доступом к нему.
-Настройте его через `COMPOSER_AUTH` или `composer config --global github-oauth.github.com`.
 
 ## Начало работы
 
