@@ -13,6 +13,12 @@ final readonly class Deal
 {
     /**
      * Создаёт DTO из уже разобранных полей.
+     *
+     * @param list<array<string, mixed>> $documents
+     * @param array<string, mixed> $client
+     * @param array<string, mixed> $bid
+     * @param array<string, mixed> $auction
+     * @param array<string, mixed> $raw
      */
     public function __construct(
         public int $id,

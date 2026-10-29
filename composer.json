@@ -1,14 +1,33 @@
 {
     "name": "pricezaim/sdk",
-    "description": "PHP SDK for the pricezaim public API",
+    "description": "PHP client for the pricezaim public API",
     "type": "library",
     "license": "MIT",
+    "keywords": [
+        "pricezaim",
+        "api",
+        "sdk",
+        "auctions",
+        "loans"
+    ],
+    "homepage": "https://github.com/horatiiwork-design/pricezaim-sdk-php",
+    "authors": [
+        {
+            "name": "horatiiwork-design",
+            "email": "horatiiwork-design@users.noreply.github.com"
+        }
+    ],
+    "support": {
+        "issues": "https://github.com/horatiiwork-design/pricezaim-sdk-php/issues",
+        "source": "https://github.com/horatiiwork-design/pricezaim-sdk-php"
+    },
     "require": {
         "php": "^8.2",
         "guzzlehttp/guzzle": "^7.8"
     },
     "require-dev": {
-        "phpunit/phpunit": "^11.5"
+        "phpunit/phpunit": "^11.5",
+        "phpstan/phpstan": "^2.1"
     },
     "autoload": {
         "psr-4": {
@@ -21,7 +40,12 @@
         }
     },
     "scripts": {
-        "test": "phpunit"
+        "test": "phpunit",
+        "analyse": "phpstan analyse --no-progress",
+        "check": [
+            "@test",
+            "@analyse"
+        ]
     },
     "config": {
         "sort-packages": true

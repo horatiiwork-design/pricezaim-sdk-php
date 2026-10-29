@@ -13,6 +13,10 @@ final readonly class Webhook
 {
     /**
      * Создаёт DTO из уже разобранных полей.
+     *
+     * @param list<string> $events
+     * @param array<string, string> $headers
+     * @param array<string, mixed> $raw
      */
     public function __construct(
         public int $id,

@@ -103,6 +103,8 @@ class ApiException extends RuntimeException
 
     /**
      * Возвращает тело ответа.
+     *
+     * @return array<string, mixed>
      */
     public function body(): array
     {
@@ -111,6 +113,8 @@ class ApiException extends RuntimeException
 
     /**
      * Возвращает заголовки ответа.
+     *
+     * @return array<string, string>
      */
     public function headers(): array
     {

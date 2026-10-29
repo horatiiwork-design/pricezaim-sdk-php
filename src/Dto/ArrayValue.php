@@ -117,6 +117,7 @@ final class ArrayValue
      *
      * @param array<string, mixed> $data Исходные данные.
      * @param string $key Имя ключа.
+     * @return array<mixed>
      */
     public static function array(array $data, string $key): array
     {
@@ -130,6 +131,7 @@ final class ArrayValue
      *
      * @param array<string, mixed> $data Исходные данные.
      * @param string $key Имя ключа.
+     * @return array<mixed>|null
      */
     public static function arrayOrNull(array $data, string $key): ?array
     {
@@ -143,6 +145,7 @@ final class ArrayValue
      *
      * @param array<string, mixed> $data Исходные данные.
      * @param string $key Имя ключа.
+     * @return list<mixed>
      */
     public static function list(array $data, string $key): array
     {

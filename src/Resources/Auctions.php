@@ -80,7 +80,7 @@ final class Auctions extends Resource
     /**
      * Создаёт аукцион в статусе draft.
      *
-     * Без файлов отправляется JSON, с файлами — multipart/form-data.
+     * API принимает создание только как multipart/form-data.
      *
      * @param array<string, mixed> $payload Поля аукциона и анкеты клиента.
      * @param array<int, array{name: string, path: string, filename?: string}> $files Фото и файлы.
@@ -88,10 +88,6 @@ final class Auctions extends Resource
      */
     public function create(array $payload, array $files = []): array
     {
-        if ($files === []) {
-            return $this->client->post('/v1/auctions', $payload);
-        }
-
         return $this->client->postMultipart('/v1/auctions', $this->multipart($payload, $files));
     }
 

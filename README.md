@@ -1,38 +1,28 @@
 # pricezaim PHP SDK
 
-PHP-клиент для публичного API [pricezaim](https://api.pricezaim.ru/docs).
-
-Текущий статус — **ранний MVP**:
-
-- авторизация по `X-API-Key`;
-- базовый HTTP-клиент и разбор ошибок API;
-- ресурсы `auctions`, `bids`, `deals`, `webhooks`;
-- пагинация;
-- проверка подписи входящих вебхуков;
-- разбор события, `event_id`, `auction_id` и типа события;
-- DTO для основных сущностей;
-- автоповторы при сетевых/временных ошибках (по env-флагу);
-- идемпотентные POST-запросы.
-
-Требования: PHP 8.2+, Composer.
+Клиент публичного API [pricezaim](https://api.pricezaim.ru/docs) для PHP 8.2+.
+Работает через Guzzle, авторизуется по `X-API-Key`, поддерживает аукционы,
+ставки, сделки и вебхуки.
 
 ## Установка
+
+После публикации в Packagist:
 
 ```bash
 composer require pricezaim/sdk
 ```
 
-Пока пакет не опубликован в Packagist, подключите приватный репозиторий:
+До публикации пакет можно подключить напрямую из репозитория:
 
 ```bash
 composer config repositories.pricezaim vcs https://github.com/horatiiwork-design/pricezaim-sdk-php.git
 composer require pricezaim/sdk:dev-main
 ```
 
-Для приватного репозитория GitHub нужен настроенный доступ Composer
-(например, `COMPOSER_AUTH` с токеном).
+Для приватного GitHub-репозитория Composer нужен токен с доступом к нему.
+Настройте его через `COMPOSER_AUTH` или `composer config --global github-oauth.github.com`.
 
-## Быстрый старт
+## Начало работы
 
 ```php
 <?php
@@ -48,120 +38,53 @@ $page = $client->auctions()->list([
     'per_page' => 20,
 ]);
 
-foreach ($page->items() as $auction) {
+foreach ($page as $auction) {
     echo $auction['id'].' — '.$auction['title'].PHP_EOL;
 }
 
 echo 'Всего: '.$page->total().PHP_EOL;
 ```
 
-## DTO
+Клиент принимает базовый URL, таймаут, готовый Guzzle-клиент и дополнительные
+заголовки:
 
-Для типизированной работы есть DTO:
+```php
+$client = new Client($apiKey, [
+    'base_uri' => 'https://api.pricezaim.ru',
+    'timeout' => 10,
+]);
+```
+
+## Что доступно
+
+| Ресурс | Методы |
+|---|---|
+| `auctions()` | список, карточка, создание, изменение, запуск, архивация, победитель, отказ, дубль, фото и файлы |
+| `bids()` | свои ставки, ставки аукциона, размещение ставки |
+| `deals()` | список, карточка, документы, реквизиты, согласование, чат |
+| `webhooks()` | создание, изменение, удаление, тестовая доставка, журнал и повтор доставки |
+
+У методов есть варианты `*Dto()`, которые возвращают объекты из
+`Pricezaim\Sdk\Dto` вместо массивов:
 
 ```php
 use Pricezaim\Sdk\Dto\Auction;
 
-/** @var Auction $auction */
 $auction = $client->auctions()->getDto(991);
 
-echo $auction->id;
-echo $auction->requiredAmount;
-echo $auction->clientProfile?->inn;
-
-$page = $client->auctions()->listDto();
-foreach ($page as $item) {
-    // $item — Pricezaim\Sdk\Dto\Auction
+if ($auction instanceof Auction) {
+    echo $auction->requiredAmount;
+    echo $auction->clientProfile?->inn;
 }
 ```
 
-Доступны:
-
-- `Pricezaim\Sdk\Dto\Auction`;
-- `Pricezaim\Sdk\Dto\ClientProfile`;
-- `Pricezaim\Sdk\Dto\Bid`;
-- `Pricezaim\Sdk\Dto\Deal`;
-- `Pricezaim\Sdk\Dto\DealDocument`;
-- `Pricezaim\Sdk\Dto\Webhook`.
-
-Методы:
-
-- `getDto()` — один объект;
-- `listDto()` / `myDto()` — `Page` с DTO;
-- `placeDto()` — ставка;
-- `documentsDto()` — документы сделки;
-- `listDto()` / `createDto()` / `updateDto()` — вебхуки.
-
-DTO терпимы к неполным ответам: отсутствующие поля становятся `null` или
-пустыми массивами. Исходный ответ всегда доступен через `toArray()` и `raw`.
-
-## Автоповторы
-
-По умолчанию **выключены**. Включаются только переменной окружения:
-
-```bash
-PRICEZAIM_SDK_RETRIES_ENABLED=1
-```
-
-Дополнительные настройки:
-
-```bash
-PRICEZAIM_SDK_RETRY_ATTEMPTS=3          # всего попыток
-PRICEZAIM_SDK_RETRY_BASE_DELAY_MS=200   # базовая пауза
-```
-
-Что повторяется:
-
-- `429`, `500`, `502`, `503`, `504`;
-- сетевые ошибки/таймауты;
-- `GET`, `HEAD`, `PUT`, `DELETE`, `OPTIONS`;
-- `POST`/`PATCH` — только если передан `Idempotency-Key`.
-
-Не повторяются `400`, `401`, `403`, `404`, `422`.
-
-При `429` учитывается `Retry-After`. Задержка растёт экспоненциально, но
-ограничена 5 секундами (для `Retry-After` — 30 секундами).
-
-## Аукционы
-
-```php
-$auction = $client->auctions()->get(991);
-
-$created = $client->auctions()->create([
-    'title' => 'Заявка №...',
-    'city' => 'Москва',
-    'required_amount' => 500000,
-]);
-
-$client->auctions()->start($created['id']);
-$client->auctions()->stop($created['id']);
-
-// Дозагрузка фото/файлов при редактировании:
-$client->auctions()->update(991, ['required_amount' => 600000], [
-    ['name' => 'photos[]', 'path' => '/tmp/photo.jpg'],
-]);
-```
-
-## Ставки
-
-```php
-$client->bids()->place(991, [
-    'amount' => 150000,
-    'interest_rate' => 19.5,
-    'term' => 24,
-], idempotencyKey: 'bid-991-1');
-```
-
-## Сделки
-
-```php
-$deals = $client->deals()->list(['status' => 'active']);
-$deal = $client->deals()->get(157);
-
-$client->deals()->sendChat(157, 'Документы отправлены.');
-```
+DTO не падают на неполном ответе: отсутствующие поля будут `null` или пустым
+массивом. Исходные данные всегда лежат в `toArray()`.
 
 ## Вебхуки
+
+Подпись проверяется по сырому телу запроса. Не пересобирайте JSON перед
+проверкой — байты должны совпадать.
 
 ```php
 use Pricezaim\Sdk\Webhook\WebhookEvent;
@@ -170,11 +93,7 @@ use Pricezaim\Sdk\Webhook\WebhookSignature;
 
 $rawBody = file_get_contents('php://input');
 
-if (! WebhookSignature::verifyRequest(
-    payload: $rawBody,
-    secret: getenv('PRICEZAIM_WEBHOOK_SECRET'),
-    headers: getallheaders(),
-)) {
+if (! WebhookSignature::verifyRequest($rawBody, getenv('PRICEZAIM_WEBHOOK_SECRET'), getallheaders())) {
     http_response_code(401);
     exit;
 }
@@ -187,26 +106,26 @@ if ($event->type() === WebhookEventType::AuctionStarted) {
 }
 ```
 
-`verifyRequest()` берёт `X-Webhook-Signature` и `X-Webhook-Timestamp` из
-заголовков (поддерживаются и имена вида `HTTP_X_WEBHOOK_SIGNATURE`).
+`verifyRequest()` понимает обычные заголовки и `HTTP_X_WEBHOOK_*`.
+`WebhookEvent` отдаёт `id()` (это `event_id`), `name()`, `type()`,
+`isKnown()`, `auctionId()` и `payload()`.
 
-`WebhookEvent` даёт:
+Неизвестное событие — нормальная ситуация: его нужно залогировать и ответить
+`200`, чтобы новые события на платформе не ломали приёмник.
 
-- `id()` — `event_id` для дедупликации;
-- `name()` — имя события;
-- `type()` — `WebhookEventType` или `null` для неизвестного события;
-- `isKnown()` — известно ли событие текущей версии SDK;
-- `auctionId()` — id аукциона, если он есть в конверте;
-- `payload()` — весь массив.
+## Повторы запросов
 
-Неизвестные события нужно логировать и отвечать `200`, а не `400`: так SDK
-не сломается, когда платформа добавит новое событие.
+По умолчанию повторов нет. Включить:
 
-SDK проверяет подпись по сырому телу запроса. Не передавайте в `verify()` или
-`verifyRequest()` результат повторного `json_encode()` — байты должны совпадать
-с телом, которое отправил pricezaim.
+```bash
+export PRICEZAIM_SDK_RETRIES_ENABLED=1
+export PRICEZAIM_SDK_RETRY_ATTEMPTS=3
+export PRICEZAIM_SDK_RETRY_BASE_DELAY_MS=200
+```
 
-Подробный справочник по методам: [`docs/api.md`](docs/api.md).
+Повторяются `429`, `500`, `502`, `503`, `504` и сетевые ошибки. `GET`, `HEAD`,
+`PUT`, `DELETE`, `OPTIONS` повторяются всегда; `POST` и `PATCH` — только с
+`Idempotency-Key`. Ответы `400`, `401`, `403`, `404`, `422` не повторяются.
 
 ## Ошибки
 
@@ -217,8 +136,25 @@ use Pricezaim\Sdk\Exception\ValidationException;
 try {
     $client->auctions()->get(999999);
 } catch (ValidationException $e) {
-    // $e->errors() — ошибки полей из ответа 422
+    print_r($e->errors());
 } catch (ApiException $e) {
-    // $e->status(), $e->errorCode(), $e->requestId(), $e->retryAfter()
+    echo $e->status();
+    echo $e->errorCode();
+    echo $e->requestId();
 }
 ```
+
+`TransportException` выбрасывается при сетевой ошибке, таймауте или TLS.
+
+## Разработка
+
+```bash
+composer install
+composer check
+```
+
+`composer check` запускает PHPUnit и PHPStan.
+
+## Документация
+
+Справочник по методам и типам — в [`docs/api.md`](docs/api.md).

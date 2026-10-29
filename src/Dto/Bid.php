@@ -13,6 +13,8 @@ final readonly class Bid
 {
     /**
      * Создаёт DTO из уже разобранных полей.
+     *
+     * @param array<string, mixed> $raw
      */
     public function __construct(
         public int $id,

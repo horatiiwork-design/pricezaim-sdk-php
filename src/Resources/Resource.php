@@ -28,7 +28,7 @@ abstract class Resource
      * бинарные потоки. Путь файла сохраняется для переоткрытия при автоповторе.
      *
      * @param array<string, scalar|null> $fields Текстовые поля.
-     * @param array<int, array{name: string, path: string, filename?: string}> $files Файлы.
+     * @param array<int, array{name?: string, path?: string, filename?: string}> $files Файлы.
      * @return array<int, array<string, mixed>> Части для Guzzle multipart.
      *
      * @throws \InvalidArgumentException Если файл не существует или не открывается.

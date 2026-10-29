@@ -23,13 +23,14 @@ use Psr\Http\Message\ResponseInterface;
  */
 final class Client
 {
-    public const VERSION = '0.4.0';
+    public const VERSION = '0.1.0';
 
     private readonly ClientInterface $http;
     private readonly string $apiKey;
     private readonly string $baseUri;
     private readonly string $userAgent;
     private readonly float $timeout;
+    /** @var array<string, string> */
     private readonly array $defaultHeaders;
     private readonly RetryPolicy $retryPolicy;
 
@@ -214,7 +215,7 @@ final class Client
     }
 
     /**
-     * Отправляет HTTP-запрос с авторизацией, таймаутом и opt-in автоповторами.
+     * Отправляет HTTP-запрос с авторизацией, таймаутом и автоповторами по env-флагу.
      *
      * HTTP-ошибки здесь не преобразуются в исключения: возвращается PSR-7 Response,
      * чтобы `send()` и `sendRaw()` могли разобрать тело ответа.

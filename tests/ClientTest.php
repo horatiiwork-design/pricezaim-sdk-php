@@ -109,6 +109,23 @@ final class ClientTest extends TestCase
         }
     }
 
+    public function test_create_auction_always_uses_multipart(): void
+    {
+        $mock = new MockHandler([
+            $this->jsonResponse(201, ['id' => 10, 'title' => 'New']),
+        ]);
+
+        $this->client($mock)->auctions()->create([
+            'title' => 'New',
+            'required_amount' => 500000,
+        ]);
+
+        $request = $this->requests[0];
+        $this->assertSame('POST', $request->getMethod());
+        $this->assertStringStartsWith('multipart/form-data', $request->getHeaderLine('Content-Type'));
+        $this->assertStringContainsString('name="title"', (string) $request->getBody());
+    }
+
     public function test_post_sends_idempotency_key_and_json_body(): void
     {
         $mock = new MockHandler([
