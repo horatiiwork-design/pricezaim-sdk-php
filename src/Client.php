@@ -18,7 +18,7 @@ use Psr\Http\Message\ResponseInterface;
 
 final class Client
 {
-    public const VERSION = '0.1.0';
+    public const VERSION = '0.2.0';
 
     private readonly ClientInterface $http;
     private readonly string $apiKey;

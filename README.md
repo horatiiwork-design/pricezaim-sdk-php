@@ -9,6 +9,7 @@ PHP-клиент для публичного API [pricezaim](https://api.priceza
 - ресурсы `auctions`, `bids`, `deals`, `webhooks`;
 - пагинация;
 - проверка подписи входящих вебхуков;
+- разбор события, `event_id`, `auction_id` и типа события;
 - идемпотентные POST-запросы.
 
 Требования: PHP 8.2+, Composer.
@@ -94,24 +95,50 @@ $client->deals()->sendChat(157, 'Документы отправлены.');
 ## Вебхуки
 
 ```php
+use Pricezaim\Sdk\Webhook\WebhookEvent;
+use Pricezaim\Sdk\Webhook\WebhookEventType;
 use Pricezaim\Sdk\Webhook\WebhookSignature;
 
-$ok = WebhookSignature::verify(
-    payload: file_get_contents('php://input'),
-    secret: getenv('PRICEZAIM_WEBHOOK_SECRET'),
-    signature: $_SERVER['HTTP_X_WEBHOOK_SIGNATURE'] ?? '',
-    timestamp: $_SERVER['HTTP_X_WEBHOOK_TIMESTAMP'] ?? null,
-);
+$rawBody = file_get_contents('php://input');
 
-if (! $ok) {
+if (! WebhookSignature::verifyRequest(
+    payload: $rawBody,
+    secret: getenv('PRICEZAIM_WEBHOOK_SECRET'),
+    headers: getallheaders(),
+)) {
     http_response_code(401);
     exit;
 }
+
+$event = WebhookEvent::fromJson($rawBody);
+
+if ($event->type() === WebhookEventType::AuctionStarted) {
+    $auctionId = $event->auctionId();
+    // ...
+}
 ```
 
-SDK проверяет подпись по сырому телу запроса. Не передавайте в `verify()`
-результат повторного `json_encode()` — байты должны совпадать с телом,
-которое отправил pricezaim.
+`verifyRequest()` берёт `X-Webhook-Signature` и `X-Webhook-Timestamp` из
+заголовков (поддерживаются и имена вида `HTTP_X_WEBHOOK_SIGNATURE`).
+
+`WebhookEvent` даёт:
+
+- `id()` — `event_id` для дедупликации;
+- `name()` — имя события;
+- `type()` — `WebhookEventType` или `null` для неизвестного события;
+- `isKnown()` — известно ли событие текущей версии SDK;
+- `auctionId()` — id аукциона, если он есть в конверте;
+- `payload()` — весь массив.
+
+Неизвестные события нужно логировать и отвечать `200`, а не `400`: так SDK
+не сломается, когда платформа добавит новое событие.
+
+SDK проверяет подпись по сырому телу запроса. Не передавайте в `verify()` или
+`verifyRequest()` результат повторного `json_encode()` — байты должны совпадать
+с телом, которое отправил pricezaim.
+
+Полный пример endpoint с дедупликацией, проверкой клиента и ставкой:
+[`examples/webhook-bid.php`](examples/webhook-bid.php).
 
 ## Ошибки
 
@@ -132,5 +159,5 @@ try {
 
 - DTO-классы для всех сущностей (сейчас возвращаются массивы);
 - автоматические повторы с backoff;
-- загрузка вложений через отдельный удобный API;
+- автоматическая дедупликация вебхуков (нужно хранилище приложения);
 - публикация пакета в Packagist и CI.
