@@ -6,9 +6,14 @@ namespace Pricezaim\Sdk\Dto;
 
 use InvalidArgumentException;
 
+/**
+ * DTO карточки аукциона. Содержит основные поля и исходный ответ в `raw`.
+ */
 final readonly class Auction
 {
-    /** @param array<string, mixed> $raw */
+    /**
+     * Создаёт DTO из уже разобранных полей.
+     */
     public function __construct(
         public int $id,
         public ?string $uuid,
@@ -50,7 +55,13 @@ final readonly class Auction
     ) {
     }
 
-    /** @param array<string, mixed> $data */
+    /**
+     * Создаёт DTO аукциона из ответа API.
+     *
+     * @param array<string, mixed> $data Данные аукциона.
+     *
+     * @throws \InvalidArgumentException Если отсутствует id.
+     */
     public static function fromArray(array $data): self
     {
         $id = ArrayValue::int($data, 'id');
@@ -101,7 +112,11 @@ final readonly class Auction
         );
     }
 
-    /** @return array<string, mixed> */
+    /**
+     * Возвращает исходные данные API без потери неизвестных полей.
+     *
+     * @return array<string, mixed>
+     */
     public function toArray(): array
     {
         return $this->raw;

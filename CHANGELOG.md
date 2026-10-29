@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.4.0 — 2026-10-29
+
+- PHPDoc-комментарии ко всем методам.
+- Подробный справочник методов в `docs/api.md`.
+- Удалён `examples/webhook-bid.php`.
+
 ## 0.3.0 — 2026-10-29
 
 - DTO для `Auction`, `ClientProfile`, `Bid`, `Deal`, `DealDocument`, `Webhook`.

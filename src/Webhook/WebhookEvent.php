@@ -14,7 +14,14 @@ use JsonException;
  */
 final class WebhookEvent
 {
-    /** @param array<string, mixed> $payload */
+    /**
+     * Создаёт разобранное событие.
+     *
+     * @param string $id event_id.
+     * @param string $name Имя события.
+     * @param array<string, mixed> $payload Полный конверт.
+     * @param int|null $auctionId ID аукциона, если он есть.
+     */
     private function __construct(
         private readonly string $id,
         private readonly string $name,
@@ -23,6 +30,15 @@ final class WebhookEvent
     ) {
     }
 
+    /**
+     * Разбирает JSON-тело вебхука.
+     *
+     * Подпись не проверяет — сначала используйте WebhookSignature::verifyRequest().
+     *
+     * @param string $json Сырое JSON-тело.
+     *
+     * @throws \InvalidArgumentException При некорректном JSON или конверте.
+     */
     public static function fromJson(string $json): self
     {
         try {
@@ -38,7 +54,13 @@ final class WebhookEvent
         return self::fromArray($payload);
     }
 
-    /** @param array<string, mixed> $payload */
+    /**
+     * Создаёт событие из уже разобранного массива.
+     *
+     * @param array<string, mixed> $payload Конверт вебхука.
+     *
+     * @throws \InvalidArgumentException Если нет event_id или event.
+     */
     public static function fromArray(array $payload): self
     {
         $id = $payload['event_id'] ?? null;
@@ -59,26 +81,43 @@ final class WebhookEvent
         return new self($id, trim($name), $payload, self::extractAuctionId($payload));
     }
 
+    /**
+     * Возвращает event_id для дедупликации.
+     */
     public function id(): string
     {
         return $this->id;
     }
 
+    /**
+     * Возвращает имя события.
+     */
     public function name(): string
     {
         return $this->name;
     }
 
+    /**
+     * Возвращает известный тип события или null для неизвестного.
+     */
     public function type(): ?WebhookEventType
     {
         return WebhookEventType::tryFrom($this->name);
     }
 
+    /**
+     * Проверяет, известно ли событие текущей версии SDK.
+     */
     public function isKnown(): bool
     {
         return $this->type() !== null;
     }
 
+    /**
+     * Сравнивает событие с типом или строкой имени.
+     *
+     * @param WebhookEventType|string $type Тип или имя события.
+     */
     public function is(WebhookEventType|string $type): bool
     {
         $name = $type instanceof WebhookEventType ? $type->value : $type;
@@ -86,18 +125,29 @@ final class WebhookEvent
         return $this->name === $name;
     }
 
+    /**
+     * Возвращает ID аукциона из конверта, если он присутствует.
+     */
     public function auctionId(): ?int
     {
         return $this->auctionId;
     }
 
-    /** @return array<string, mixed> */
+    /**
+     * Возвращает полный конверт вебхука.
+     *
+     * @return array<string, mixed>
+     */
     public function payload(): array
     {
         return $this->payload;
     }
 
-    /** @param array<string, mixed> $payload */
+    /**
+     * Ищет ID аукциона в auction.id, auction_id или deal.auction_id.
+     *
+     * @param array<string, mixed> $payload Конверт вебхука.
+     */
     private static function extractAuctionId(array $payload): ?int
     {
         $auction = $payload['auction'] ?? null;

@@ -34,12 +34,21 @@ enum WebhookEventType: string
 
     case WebhookTest = 'webhook.test';
 
-    /** @return list<string> */
+    /**
+     * Возвращает все известные имена событий.
+     *
+     * @return list<string>
+     */
     public static function values(): array
     {
         return array_map(static fn (self $case): string => $case->value, self::cases());
     }
 
+    /**
+     * Проверяет, входит ли имя в каталог известных событий.
+     *
+     * @param string $name Имя события.
+     */
     public static function isKnown(string $name): bool
     {
         return self::tryFrom($name) !== null;

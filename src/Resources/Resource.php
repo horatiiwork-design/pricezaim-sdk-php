@@ -7,20 +7,31 @@ namespace Pricezaim\Sdk\Resources;
 use InvalidArgumentException;
 use Pricezaim\Sdk\Client;
 
+/**
+ * Базовый класс ресурса API.
+ */
 abstract class Resource
 {
+    /**
+     * Создаёт ресурс, привязанный к клиенту API.
+     *
+     * @param \Pricezaim\Sdk\Client $client Клиент API.
+     */
     public function __construct(protected readonly Client $client)
     {
     }
 
     /**
-     * Собрать multipart из полей и файлов.
+     * Собирает multipart-части из полей и файлов.
      *
-     * $files: [['name' => 'photos[]', 'path' => '/tmp/a.jpg', 'filename' => 'a.jpg'], ...]
+     * null-поля пропускаются, boolean приводятся к 1/0, файлы открываются как
+     * бинарные потоки. Путь файла сохраняется для переоткрытия при автоповторе.
      *
-     * @param array<string, scalar|null> $fields
-     * @param array<int, array{name: string, path: string, filename?: string}> $files
-     * @return array<int, array<string, mixed>>
+     * @param array<string, scalar|null> $fields Текстовые поля.
+     * @param array<int, array{name: string, path: string, filename?: string}> $files Файлы.
+     * @return array<int, array<string, mixed>> Части для Guzzle multipart.
+     *
+     * @throws \InvalidArgumentException Если файл не существует или не открывается.
      */
     protected function multipart(array $fields, array $files): array
     {

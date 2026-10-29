@@ -4,9 +4,14 @@ declare(strict_types=1);
 
 namespace Pricezaim\Sdk\Dto;
 
+/**
+ * DTO анкеты клиента для скоринга. Содержит ПДн, поэтому не логируйте объект целиком.
+ */
 final readonly class ClientProfile
 {
-    /** @param array<string, mixed> $raw */
+    /**
+     * Создаёт DTO из уже разобранных полей.
+     */
     public function __construct(
         public ?string $lastName,
         public ?string $firstName,
@@ -45,7 +50,13 @@ final readonly class ClientProfile
     ) {
     }
 
-    /** @param array<string, mixed> $data */
+    /**
+     * Создаёт DTO из ответа API.
+     *
+     * @param array<string, mixed> $data Данные API.
+     *
+     * @throws \InvalidArgumentException Если отсутствует обязательный id.
+     */
     public static function fromArray(array $data): self
     {
         return new self(
@@ -86,7 +97,11 @@ final readonly class ClientProfile
         );
     }
 
-    /** @return array<string, mixed> */
+    /**
+     * Возвращает исходные данные API без потери неизвестных полей.
+     *
+     * @return array<string, mixed>
+     */
     public function toArray(): array
     {
         return $this->raw;

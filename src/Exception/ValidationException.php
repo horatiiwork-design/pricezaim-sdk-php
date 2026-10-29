@@ -4,9 +4,23 @@ declare(strict_types=1);
 
 namespace Pricezaim\Sdk\Exception;
 
+/**
+ * Ошибка валидации 422.
+ */
 class ValidationException extends ApiException
 {
-    /** @param array<string, mixed> $body @param array<string, string> $headers @param array<string, array<int, string>> $validationErrors */
+    /**
+     * Создаёт исключение ошибки валидации 422.
+     *
+     * @param int $status HTTP-статус.
+     * @param string|null $errorCode Код ошибки.
+     * @param string $message Сообщение.
+     * @param array<string, mixed> $body Тело ответа.
+     * @param array<string, string> $headers Заголовки.
+     * @param string|null $requestId X-Request-Id.
+     * @param int|null $retryAfter Retry-After.
+     * @param array<string, array<int, string>> $validationErrors Ошибки полей.
+     */
     public function __construct(
         int $status,
         ?string $errorCode,
@@ -20,7 +34,11 @@ class ValidationException extends ApiException
         parent::__construct($status, $errorCode, $message, $body, $headers, $requestId, $retryAfter);
     }
 
-    /** @return array<string, array<int, string>> */
+    /**
+     * Возвращает ошибки полей из ответа 422.
+     *
+     * @return array<string, array<int, string>>
+     */
     public function errors(): array
     {
         return $this->validationErrors;

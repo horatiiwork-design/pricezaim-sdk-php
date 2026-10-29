@@ -6,14 +6,13 @@ namespace Pricezaim\Sdk\Dto;
 
 use InvalidArgumentException;
 
+/**
+ * DTO сделки. Документы доступны как исходные массивы и как объекты `DealDocument`.
+ */
 final readonly class Deal
 {
     /**
-     * @param array<string, mixed> $client
-     * @param array<string, mixed> $bid
-     * @param array<string, mixed> $auction
-     * @param array<int, array<string, mixed>> $documents
-     * @param array<string, mixed> $raw
+     * Создаёт DTO из уже разобранных полей.
      */
     public function __construct(
         public int $id,
@@ -39,7 +38,13 @@ final readonly class Deal
     ) {
     }
 
-    /** @param array<string, mixed> $data */
+    /**
+     * Создаёт DTO сделки из ответа API.
+     *
+     * @param array<string, mixed> $data Данные сделки.
+     *
+     * @throws \InvalidArgumentException Если отсутствует id.
+     */
     public static function fromArray(array $data): self
     {
         $id = ArrayValue::int($data, 'id');
@@ -73,7 +78,11 @@ final readonly class Deal
         );
     }
 
-    /** @return list<DealDocument> */
+    /**
+     * Возвращает документы сделки как DTO.
+     *
+     * @return list<DealDocument>
+     */
     public function documentObjects(): array
     {
         return array_map(
@@ -82,7 +91,11 @@ final readonly class Deal
         );
     }
 
-    /** @return array<string, mixed> */
+    /**
+     * Возвращает исходные данные API без потери неизвестных полей.
+     *
+     * @return array<string, mixed>
+     */
     public function toArray(): array
     {
         return $this->raw;

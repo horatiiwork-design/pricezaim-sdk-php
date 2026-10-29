@@ -6,9 +6,14 @@ namespace Pricezaim\Sdk\Dto;
 
 use InvalidArgumentException;
 
+/**
+ * DTO вебхука без секрета: API не возвращает секрет после создания.
+ */
 final readonly class Webhook
 {
-    /** @param array<string, mixed> $raw */
+    /**
+     * Создаёт DTO из уже разобранных полей.
+     */
     public function __construct(
         public int $id,
         public ?string $url,
@@ -24,7 +29,13 @@ final readonly class Webhook
     ) {
     }
 
-    /** @param array<string, mixed> $data */
+    /**
+     * Создаёт DTO вебхука из ответа API.
+     *
+     * @param array<string, mixed> $data Данные вебхука.
+     *
+     * @throws \InvalidArgumentException Если отсутствует id.
+     */
     public static function fromArray(array $data): self
     {
         $id = ArrayValue::int($data, 'id');
@@ -47,7 +58,11 @@ final readonly class Webhook
         );
     }
 
-    /** @return array<string, mixed> */
+    /**
+     * Возвращает исходные данные API без потери неизвестных полей.
+     *
+     * @return array<string, mixed>
+     */
     public function toArray(): array
     {
         return $this->raw;

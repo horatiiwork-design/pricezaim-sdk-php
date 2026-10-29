@@ -17,9 +17,11 @@ use Traversable;
 final class Page implements Countable, IteratorAggregate, JsonSerializable
 {
     /**
-     * @param array<int, mixed> $items
-     * @param array<string, mixed> $meta
-     * @param array<string, mixed> $raw
+     * Создаёт страницу результатов.
+     *
+     * @param array<int, mixed> $items Элементы текущей страницы.
+     * @param array<string, mixed> $meta Метаданные пагинации.
+     * @param array<string, mixed> $raw Исходный ответ API.
      */
     public function __construct(
         private readonly array $items,
@@ -28,7 +30,14 @@ final class Page implements Countable, IteratorAggregate, JsonSerializable
     ) {
     }
 
-    /** @param array<string, mixed> $response */
+    /**
+     * Создаёт страницу из ответа API с ключами data и meta.
+     *
+     * Если meta отсутствует, верхнеуровневые поля пагинации переносятся в meta.
+     *
+     * @param array<string, mixed> $response Ответ API.
+     * @return self Страница результатов.
+     */
     public static function fromArray(array $response): self
     {
         $items = $response['data'] ?? [];
@@ -50,59 +59,93 @@ final class Page implements Countable, IteratorAggregate, JsonSerializable
         return new self(array_values($items), $meta, $response);
     }
 
-    /** @return array<int, mixed> */
+    /**
+     * Возвращает элементы текущей страницы.
+     *
+     * @return array<int, mixed>
+     */
     public function items(): array
     {
         return $this->items;
     }
 
-    /** @return array<int, mixed> */
+    /**
+     * Псевдоним items() для совместимости с JSON-ответом API.
+     *
+     * @return array<int, mixed>
+     */
     public function data(): array
     {
         return $this->items;
     }
 
-    /** @return array<string, mixed> */
+    /**
+     * Возвращает метаданные пагинации.
+     *
+     * @return array<string, mixed>
+     */
     public function meta(): array
     {
         return $this->meta;
     }
 
-    /** @return array<string, mixed> */
+    /**
+     * Возвращает исходный ответ API.
+     *
+     * @return array<string, mixed>
+     */
     public function raw(): array
     {
         return $this->raw;
     }
 
+    /**
+     * Возвращает общее количество записей.
+     *
+     * Если meta.total отсутствует, возвращает количество элементов на странице.
+     */
     public function total(): int
     {
         return (int) ($this->meta['total'] ?? count($this->items));
     }
 
+    /**
+     * Возвращает номер текущей страницы.
+     */
     public function currentPage(): int
     {
         return (int) ($this->meta['current_page'] ?? 1);
     }
 
+    /**
+     * Возвращает номер последней страницы.
+     */
     public function lastPage(): int
     {
         return (int) ($this->meta['last_page'] ?? 1);
     }
 
+    /**
+     * Возвращает размер страницы.
+     */
     public function perPage(): int
     {
         return (int) ($this->meta['per_page'] ?? count($this->items));
     }
 
+    /**
+     * Проверяет, что текущая страница пуста.
+     */
     public function isEmpty(): bool
     {
         return $this->items === [];
     }
 
     /**
-     * Преобразовать элементы страницы, сохранив meta и исходный ответ.
+     * Преобразует элементы страницы, сохраняя meta и исходный ответ.
      *
-     * @param callable(mixed): mixed $mapper
+     * @param callable(mixed): mixed $mapper Функция преобразования элемента.
+     * @return self Новая страница с преобразованными элементами.
      */
     public function map(callable $mapper): self
     {
@@ -113,18 +156,29 @@ final class Page implements Countable, IteratorAggregate, JsonSerializable
         );
     }
 
+    /**
+     * Возвращает количество элементов на текущей странице.
+     */
     public function count(): int
     {
         return count($this->items);
     }
 
-    /** @return Traversable<int, mixed> */
+    /**
+     * Позволяет перебирать элементы страницы через foreach.
+     *
+     * @return \Traversable<int, mixed>
+     */
     public function getIterator(): Traversable
     {
         yield from $this->items;
     }
 
-    /** @return array<string, mixed> */
+    /**
+     * Возвращает исходный ответ API при json_encode().
+     *
+     * @return array<string, mixed>
+     */
     public function jsonSerialize(): array
     {
         return $this->raw;

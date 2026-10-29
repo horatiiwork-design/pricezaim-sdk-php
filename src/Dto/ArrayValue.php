@@ -11,7 +11,12 @@ namespace Pricezaim\Sdk\Dto;
  */
 final class ArrayValue
 {
-    /** @param array<string, mixed> $data */
+    /**
+     * Приводит значение к int или возвращает null.
+     *
+     * @param array<string, mixed> $data Исходные данные.
+     * @param string $key Имя ключа.
+     */
     public static function int(array $data, string $key): ?int
     {
         $value = $data[$key] ?? null;
@@ -23,7 +28,12 @@ final class ArrayValue
         return is_string($value) && is_numeric($value) ? (int) $value : null;
     }
 
-    /** @param array<string, mixed> $data */
+    /**
+     * Приводит значение к float или возвращает null.
+     *
+     * @param array<string, mixed> $data Исходные данные.
+     * @param string $key Имя ключа.
+     */
     public static function float(array $data, string $key): ?float
     {
         $value = $data[$key] ?? null;
@@ -35,7 +45,12 @@ final class ArrayValue
         return is_string($value) && is_numeric($value) ? (float) $value : null;
     }
 
-    /** @param array<string, mixed> $data */
+    /**
+     * Приводит скалярное значение к string или возвращает null.
+     *
+     * @param array<string, mixed> $data Исходные данные.
+     * @param string $key Имя ключа.
+     */
     public static function string(array $data, string $key): ?string
     {
         $value = $data[$key] ?? null;
@@ -47,7 +62,12 @@ final class ArrayValue
         return is_int($value) || is_float($value) ? (string) $value : null;
     }
 
-    /** @param array<string, mixed> $data */
+    /**
+     * Приводит значение к bool с значением по умолчанию.
+     *
+     * @param array<string, mixed> $data Исходные данные.
+     * @param string $key Имя ключа.
+     */
     public static function bool(array $data, string $key, bool $default = false): bool
     {
         $value = $data[$key] ?? null;
@@ -67,7 +87,12 @@ final class ArrayValue
         return $default;
     }
 
-    /** @param array<string, mixed> $data */
+    /**
+     * Приводит значение к bool, сохраняя null для отсутствующего поля.
+     *
+     * @param array<string, mixed> $data Исходные данные.
+     * @param string $key Имя ключа.
+     */
     public static function boolOrNull(array $data, string $key): ?bool
     {
         $value = $data[$key] ?? null;
@@ -87,7 +112,12 @@ final class ArrayValue
         return is_string($value) ? filter_var($value, FILTER_VALIDATE_BOOLEAN) : null;
     }
 
-    /** @param array<string, mixed> $data @return array<string, mixed> */
+    /**
+     * Возвращает массив по ключу или пустой массив.
+     *
+     * @param array<string, mixed> $data Исходные данные.
+     * @param string $key Имя ключа.
+     */
     public static function array(array $data, string $key): array
     {
         $value = $data[$key] ?? null;
@@ -95,7 +125,12 @@ final class ArrayValue
         return is_array($value) ? $value : [];
     }
 
-    /** @param array<string, mixed> $data @return array<string, mixed>|null */
+    /**
+     * Возвращает массив по ключу или null.
+     *
+     * @param array<string, mixed> $data Исходные данные.
+     * @param string $key Имя ключа.
+     */
     public static function arrayOrNull(array $data, string $key): ?array
     {
         $value = $data[$key] ?? null;
@@ -103,7 +138,12 @@ final class ArrayValue
         return is_array($value) ? $value : null;
     }
 
-    /** @param array<string, mixed> $data @return list<mixed> */
+    /**
+     * Возвращает список значений по ключу или пустой массив.
+     *
+     * @param array<string, mixed> $data Исходные данные.
+     * @param string $key Имя ключа.
+     */
     public static function list(array $data, string $key): array
     {
         $value = $data[$key] ?? null;
