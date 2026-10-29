@@ -116,6 +116,16 @@ final class Client
         return $this->send('PUT', $this->uri($path), ['json' => $payload]);
     }
 
+    public function putMultipart(string $path, array $multipart, ?string $idempotencyKey = null): array
+    {
+        $options = ['multipart' => $multipart];
+        if ($idempotencyKey !== null) {
+            $options['headers'] = ['Idempotency-Key' => $idempotencyKey];
+        }
+
+        return $this->send('PUT', $this->uri($path), $options);
+    }
+
     public function delete(string $path): array
     {
         return $this->send('DELETE', $this->uri($path));

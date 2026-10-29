@@ -26,9 +26,15 @@ abstract class Resource
     {
         $parts = [];
         foreach ($fields as $name => $value) {
-            if ($value !== null) {
-                $parts[] = ['name' => $name, 'contents' => (string) $value];
+            if ($value === null) {
+                continue;
             }
+
+            if (is_bool($value)) {
+                $value = $value ? '1' : '0';
+            }
+
+            $parts[] = ['name' => $name, 'contents' => (string) $value];
         }
 
         foreach ($files as $file) {
@@ -36,9 +42,14 @@ abstract class Resource
                 throw new InvalidArgumentException('Each file must contain name and an existing path.');
             }
 
+            $handle = fopen($file['path'], 'rb');
+            if ($handle === false) {
+                throw new InvalidArgumentException('Unable to open file: '.$file['path']);
+            }
+
             $parts[] = [
                 'name' => $file['name'],
-                'contents' => fopen($file['path'], 'rb'),
+                'contents' => $handle,
                 'filename' => $file['filename'] ?? basename($file['path']),
             ];
         }

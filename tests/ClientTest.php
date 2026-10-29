@@ -124,4 +124,32 @@ final class ClientTest extends TestCase
         $this->assertSame('idem-1', $request->getHeaderLine('Idempotency-Key'));
         $this->assertStringContainsString('"amount":150000', (string) $request->getBody());
     }
+
+    public function test_auction_update_with_files_uses_multipart_put(): void
+    {
+        $path = tempnam(sys_get_temp_dir(), 'sdk-photo-');
+        file_put_contents($path, 'jpeg-bytes');
+
+        try {
+            $mock = new MockHandler([
+                $this->jsonResponse(200, ['id' => 10, 'title' => 'Updated']),
+            ]);
+
+            $result = $this->client($mock)->auctions()->update(10, [
+                'required_amount' => 600000,
+                'client_marketing_agreed' => true,
+            ], [
+                ['name' => 'photos[]', 'path' => $path, 'filename' => 'photo.jpg'],
+            ]);
+
+            $this->assertSame('Updated', $result['title']);
+            $request = $this->requests[0];
+            $this->assertSame('PUT', $request->getMethod());
+            $this->assertStringStartsWith('multipart/form-data', $request->getHeaderLine('Content-Type'));
+            $this->assertStringContainsString('name="photos[]"', (string) $request->getBody());
+            $this->assertStringContainsString('jpeg-bytes', (string) $request->getBody());
+        } finally {
+            @unlink($path);
+        }
+    }
 }

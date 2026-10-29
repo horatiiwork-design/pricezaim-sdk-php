@@ -19,8 +19,15 @@ PHP-клиент для публичного API [pricezaim](https://api.priceza
 composer require pricezaim/sdk
 ```
 
-Пока пакет не опубликован, подключите локальный репозиторий или скопируйте
-`src/` в проект.
+Пока пакет не опубликован в Packagist, подключите приватный репозиторий:
+
+```bash
+composer config repositories.pricezaim vcs https://github.com/horatiiwork-design/pricezaim-sdk-php.git
+composer require pricezaim/sdk:dev-main
+```
+
+Для приватного репозитория GitHub нужен настроенный доступ Composer
+(например, `COMPOSER_AUTH` с токеном).
 
 ## Быстрый старт
 
@@ -58,6 +65,11 @@ $created = $client->auctions()->create([
 
 $client->auctions()->start($created['id']);
 $client->auctions()->stop($created['id']);
+
+// Дозагрузка фото/файлов при редактировании:
+$client->auctions()->update(991, ['required_amount' => 600000], [
+    ['name' => 'photos[]', 'path' => '/tmp/photo.jpg'],
+]);
 ```
 
 ## Ставки

@@ -40,10 +40,20 @@ final class Auctions extends Resource
         return $this->client->postMultipart('/v1/auctions', $this->multipart($payload, $files));
     }
 
-    /** @param array<string, mixed> $payload @return array<string, mixed> */
-    public function update(int|string $id, array $payload): array
+    /**
+     * @param array<string, mixed> $payload
+     * @param array<int, array{name: string, path: string, filename?: string}> $files
+     * @return array<string, mixed>
+     */
+    public function update(int|string $id, array $payload, array $files = []): array
     {
-        return $this->client->put('/v1/auctions/'.rawurlencode((string) $id), $payload);
+        $path = '/v1/auctions/'.rawurlencode((string) $id);
+
+        if ($files === []) {
+            return $this->client->put($path, $payload);
+        }
+
+        return $this->client->putMultipart($path, $this->multipart($payload, $files));
     }
 
     /** @return array<string, mixed> */
