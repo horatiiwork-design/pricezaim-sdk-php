@@ -10,6 +10,8 @@ PHP-клиент для публичного API [pricezaim](https://api.priceza
 - пагинация;
 - проверка подписи входящих вебхуков;
 - разбор события, `event_id`, `auction_id` и типа события;
+- DTO для основных сущностей;
+- автоповторы при сетевых/временных ошибках (по env-флагу);
 - идемпотентные POST-запросы.
 
 Требования: PHP 8.2+, Composer.
@@ -52,6 +54,73 @@ foreach ($page->items() as $auction) {
 
 echo 'Всего: '.$page->total().PHP_EOL;
 ```
+
+## DTO
+
+Для типизированной работы есть DTO:
+
+```php
+use Pricezaim\Sdk\Dto\Auction;
+
+/** @var Auction $auction */
+$auction = $client->auctions()->getDto(991);
+
+echo $auction->id;
+echo $auction->requiredAmount;
+echo $auction->clientProfile?->inn;
+
+$page = $client->auctions()->listDto();
+foreach ($page as $item) {
+    // $item — Pricezaim\Sdk\Dto\Auction
+}
+```
+
+Доступны:
+
+- `Pricezaim\Sdk\Dto\Auction`;
+- `Pricezaim\Sdk\Dto\ClientProfile`;
+- `Pricezaim\Sdk\Dto\Bid`;
+- `Pricezaim\Sdk\Dto\Deal`;
+- `Pricezaim\Sdk\Dto\DealDocument`;
+- `Pricezaim\Sdk\Dto\Webhook`.
+
+Методы:
+
+- `getDto()` — один объект;
+- `listDto()` / `myDto()` — `Page` с DTO;
+- `placeDto()` — ставка;
+- `documentsDto()` — документы сделки;
+- `listDto()` / `createDto()` / `updateDto()` — вебхуки.
+
+DTO терпимы к неполным ответам: отсутствующие поля становятся `null` или
+пустыми массивами. Исходный ответ всегда доступен через `toArray()` и `raw`.
+
+## Автоповторы
+
+По умолчанию **выключены**. Включаются только переменной окружения:
+
+```bash
+PRICEZAIM_SDK_RETRIES_ENABLED=1
+```
+
+Дополнительные настройки:
+
+```bash
+PRICEZAIM_SDK_RETRY_ATTEMPTS=3          # всего попыток
+PRICEZAIM_SDK_RETRY_BASE_DELAY_MS=200   # базовая пауза
+```
+
+Что повторяется:
+
+- `429`, `500`, `502`, `503`, `504`;
+- сетевые ошибки/таймауты;
+- `GET`, `HEAD`, `PUT`, `DELETE`, `OPTIONS`;
+- `POST`/`PATCH` — только если передан `Idempotency-Key`.
+
+Не повторяются `400`, `401`, `403`, `404`, `422`.
+
+При `429` учитывается `Retry-After`. Задержка растёт экспоненциально, но
+ограничена 5 секундами (для `Retry-After` — 30 секундами).
 
 ## Аукционы
 
@@ -157,7 +226,5 @@ try {
 
 ## Что пока не входит
 
-- DTO-классы для всех сущностей (сейчас возвращаются массивы);
-- автоматические повторы с backoff;
 - автоматическая дедупликация вебхуков (нужно хранилище приложения);
 - публикация пакета в Packagist и CI.

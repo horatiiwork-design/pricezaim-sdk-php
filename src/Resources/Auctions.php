@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Pricezaim\Sdk\Resources;
 
+use Pricezaim\Sdk\Dto\Auction;
 use Pricezaim\Sdk\Page;
 
 final class Auctions extends Resource
@@ -20,10 +21,25 @@ final class Auctions extends Resource
         return Page::fromArray($this->client->get('/v1/auctions/my', $filters));
     }
 
+    public function listDto(array $filters = []): Page
+    {
+        return $this->list($filters)->map(static fn (array $auction): Auction => Auction::fromArray($auction));
+    }
+
+    public function myDto(array $filters = []): Page
+    {
+        return $this->my($filters)->map(static fn (array $auction): Auction => Auction::fromArray($auction));
+    }
+
     /** @return array<string, mixed> */
     public function get(int|string $id): array
     {
         return $this->client->get('/v1/auctions/'.rawurlencode((string) $id));
+    }
+
+    public function getDto(int|string $id): Auction
+    {
+        return Auction::fromArray($this->get($id));
     }
 
     /**
@@ -43,6 +59,15 @@ final class Auctions extends Resource
     /**
      * @param array<string, mixed> $payload
      * @param array<int, array{name: string, path: string, filename?: string}> $files
+     */
+    public function createDto(array $payload, array $files = []): Auction
+    {
+        return Auction::fromArray($this->create($payload, $files));
+    }
+
+    /**
+     * @param array<string, mixed> $payload
+     * @param array<int, array{name: string, path: string, filename?: string}> $files
      * @return array<string, mixed>
      */
     public function update(int|string $id, array $payload, array $files = []): array
@@ -54,6 +79,15 @@ final class Auctions extends Resource
         }
 
         return $this->client->putMultipart($path, $this->multipart($payload, $files));
+    }
+
+    /**
+     * @param array<string, mixed> $payload
+     * @param array<int, array{name: string, path: string, filename?: string}> $files
+     */
+    public function updateDto(int|string $id, array $payload, array $files = []): Auction
+    {
+        return Auction::fromArray($this->update($id, $payload, $files));
     }
 
     /** @return array<string, mixed> */

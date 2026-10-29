@@ -18,7 +18,7 @@ use Psr\Http\Message\ResponseInterface;
 
 final class Client
 {
-    public const VERSION = '0.2.0';
+    public const VERSION = '0.3.0';
 
     private readonly ClientInterface $http;
     private readonly string $apiKey;
@@ -26,6 +26,7 @@ final class Client
     private readonly string $userAgent;
     private readonly float $timeout;
     private readonly array $defaultHeaders;
+    private readonly RetryPolicy $retryPolicy;
 
     private ?Auctions $auctions = null;
     private ?Bids $bids = null;
@@ -53,6 +54,7 @@ final class Client
         $this->timeout = (float) ($options['timeout'] ?? 15);
         $this->userAgent = (string) ($options['user_agent'] ?? 'pricezaim-sdk-php/'.self::VERSION);
         $this->http = $options['http_client'] ?? new GuzzleClient();
+        $this->retryPolicy = RetryPolicy::fromEnvironment();
 
         $this->defaultHeaders = array_merge([
             'X-API-Key' => $this->apiKey,
@@ -141,11 +143,50 @@ final class Client
         $options['http_errors'] = false;
         $options['timeout'] = $options['timeout'] ?? $this->timeout;
 
-        try {
-            return $this->http->request($method, $uri, $options);
-        } catch (GuzzleException $e) {
-            throw new TransportException($e->getMessage(), $e);
+        $headers = $options['headers'];
+        $maxAttempts = $this->retryPolicy->enabled ? max(1, $this->retryPolicy->maxAttempts) : 1;
+
+        for ($attempt = 1; $attempt <= $maxAttempts; $attempt++) {
+            try {
+                $response = $this->http->request($method, $uri, $options);
+            } catch (GuzzleException $e) {
+                if ($this->retryPolicy->allowsRetry($method, $headers, $attempt)) {
+                    if (! $this->rewindMultipart($options)) {
+                        throw new TransportException($e->getMessage(), $e);
+                    }
+
+                    $this->wait($this->retryPolicy->delayMs($attempt));
+
+                    continue;
+                }
+
+                throw new TransportException($e->getMessage(), $e);
+            }
+
+            $status = $response->getStatusCode();
+            if (
+                $this->retryPolicy->allowsRetry($method, $headers, $attempt)
+                && $this->retryPolicy->shouldRetryStatus($status)
+            ) {
+                if (! $this->rewindMultipart($options)) {
+                    return $response;
+                }
+
+                $retryAfter = RetryPolicy::retryAfterSeconds($response->getHeaderLine('Retry-After'));
+                $this->wait($this->retryPolicy->delayMs($attempt, $retryAfter));
+
+                continue;
+            }
+
+            return $response;
         }
+
+        throw new TransportException('HTTP request failed after retries.');
+    }
+
+    public function retryPolicy(): RetryPolicy
+    {
+        return $this->retryPolicy;
     }
 
     /** @param array<string, mixed> $options */
@@ -203,5 +244,49 @@ final class Client
     public function baseUri(): string
     {
         return $this->baseUri;
+    }
+
+    private function wait(int $delayMs): void
+    {
+        if ($delayMs > 0) {
+            usleep($delayMs * 1000);
+        }
+    }
+
+    /** @param array<string, mixed> $options */
+    private function rewindMultipart(array &$options): bool
+    {
+        if (! isset($options['multipart']) || ! is_array($options['multipart'])) {
+            return true;
+        }
+
+        foreach ($options['multipart'] as $index => $part) {
+            if (! is_array($part) || ! array_key_exists('contents', $part)) {
+                continue;
+            }
+
+            $contents = $part['contents'];
+            if (is_resource($contents)) {
+                if (rewind($contents)) {
+                    continue;
+                }
+            } elseif (! isset($part['path'])) {
+                // Обычное текстовое поле multipart: переоткрывать нечего.
+                continue;
+            }
+
+            if (isset($part['path']) && is_string($part['path']) && is_file($part['path'])) {
+                $handle = fopen($part['path'], 'rb');
+                if ($handle !== false) {
+                    $options['multipart'][$index]['contents'] = $handle;
+
+                    continue;
+                }
+            }
+
+            return false;
+        }
+
+        return true;
     }
 }

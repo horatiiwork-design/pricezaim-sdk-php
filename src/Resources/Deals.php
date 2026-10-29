@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Pricezaim\Sdk\Resources;
 
+use Pricezaim\Sdk\Dto\Deal;
+use Pricezaim\Sdk\Dto\DealDocument;
 use Pricezaim\Sdk\Page;
 
 final class Deals extends Resource
@@ -14,16 +16,42 @@ final class Deals extends Resource
         return Page::fromArray($this->client->get('/v1/deals', $filters));
     }
 
+    public function listDto(array $filters = []): Page
+    {
+        return $this->list($filters)->map(static fn (array $deal): Deal => Deal::fromArray($deal));
+    }
+
     /** @return array<string, mixed> */
     public function get(int|string $id): array
     {
         return $this->client->get('/v1/deals/'.rawurlencode((string) $id));
     }
 
+    public function getDto(int|string $id): Deal
+    {
+        return Deal::fromArray($this->get($id));
+    }
+
     /** @return array<string, mixed> */
     public function documents(int|string $id): array
     {
         return $this->client->get('/v1/deals/'.rawurlencode((string) $id).'/documents');
+    }
+
+    /** @return list<DealDocument> */
+    public function documentsDto(int|string $id): array
+    {
+        $result = $this->documents($id);
+        $documents = $result['data'] ?? [];
+
+        if (! is_array($documents)) {
+            return [];
+        }
+
+        return array_map(
+            static fn (array $document): DealDocument => DealDocument::fromArray($document),
+            array_values(array_filter($documents, 'is_array')),
+        );
     }
 
     /**

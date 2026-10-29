@@ -51,6 +51,7 @@ abstract class Resource
                 'name' => $file['name'],
                 'contents' => $handle,
                 'filename' => $file['filename'] ?? basename($file['path']),
+                'path' => $file['path'],
             ];
         }
 

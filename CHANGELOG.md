@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.3.0 — 2026-10-29
+
+- DTO для `Auction`, `ClientProfile`, `Bid`, `Deal`, `DealDocument`, `Webhook`.
+- DTO-методы ресурсов: `getDto`, `listDto`, `placeDto`, `documentsDto`, `listDto` вебхуков.
+- `Page::map()` для преобразования элементов страницы.
+- Автоповторы с включением только через `PRICEZAIM_SDK_RETRIES_ENABLED`.
+- Ретраи `429/500/502/503/504` и сетевых ошибок; POST/PATCH — только с `Idempotency-Key`.
+
 ## 0.2.0 — 2026-10-29
 
 - `WebhookSignature::verifyRequest()` — проверка подписи по массиву заголовков.

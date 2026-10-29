@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Pricezaim\Sdk\Resources;
 
+use Pricezaim\Sdk\Dto\Bid;
 use Pricezaim\Sdk\Page;
 
 final class Bids extends Resource
@@ -23,6 +24,17 @@ final class Bids extends Resource
         ));
     }
 
+    public function myDto(array $filters = []): Page
+    {
+        return $this->my($filters)->map(static fn (array $bid): Bid => Bid::fromArray($bid));
+    }
+
+    public function forAuctionDto(int|string $auctionId, array $filters = []): Page
+    {
+        return $this->forAuction($auctionId, $filters)
+            ->map(static fn (array $bid): Bid => Bid::fromArray($bid, (int) $auctionId));
+    }
+
     /** @param array<string, mixed> $payload @return array<string, mixed> */
     public function place(int|string $auctionId, array $payload, ?string $idempotencyKey = null): array
     {
@@ -31,5 +43,14 @@ final class Bids extends Resource
             $payload,
             $idempotencyKey,
         );
+    }
+
+    /** @param array<string, mixed> $payload */
+    public function placeDto(int|string $auctionId, array $payload, ?string $idempotencyKey = null): Bid
+    {
+        $result = $this->place($auctionId, $payload, $idempotencyKey);
+        $bid = $result['bid'] ?? [];
+
+        return Bid::fromArray(is_array($bid) ? $bid : [], (int) $auctionId);
     }
 }

@@ -12,12 +12,12 @@ use Traversable;
 /**
  * Пагинированный ответ API: data + meta.
  *
- * @implements IteratorAggregate<int, array<string, mixed>>
+ * @implements IteratorAggregate<int, mixed>
  */
 final class Page implements Countable, IteratorAggregate, JsonSerializable
 {
     /**
-     * @param array<int, array<string, mixed>> $items
+     * @param array<int, mixed> $items
      * @param array<string, mixed> $meta
      * @param array<string, mixed> $raw
      */
@@ -50,13 +50,13 @@ final class Page implements Countable, IteratorAggregate, JsonSerializable
         return new self(array_values($items), $meta, $response);
     }
 
-    /** @return array<int, array<string, mixed>> */
+    /** @return array<int, mixed> */
     public function items(): array
     {
         return $this->items;
     }
 
-    /** @return array<int, array<string, mixed>> */
+    /** @return array<int, mixed> */
     public function data(): array
     {
         return $this->items;
@@ -99,12 +99,26 @@ final class Page implements Countable, IteratorAggregate, JsonSerializable
         return $this->items === [];
     }
 
+    /**
+     * Преобразовать элементы страницы, сохранив meta и исходный ответ.
+     *
+     * @param callable(mixed): mixed $mapper
+     */
+    public function map(callable $mapper): self
+    {
+        return new self(
+            array_values(array_map($mapper, $this->items)),
+            $this->meta,
+            $this->raw,
+        );
+    }
+
     public function count(): int
     {
         return count($this->items);
     }
 
-    /** @return Traversable<int, array<string, mixed>> */
+    /** @return Traversable<int, mixed> */
     public function getIterator(): Traversable
     {
         yield from $this->items;

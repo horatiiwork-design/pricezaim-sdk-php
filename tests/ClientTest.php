@@ -11,6 +11,9 @@ use GuzzleHttp\Middleware;
 use GuzzleHttp\Psr7\Response;
 use PHPUnit\Framework\TestCase;
 use Pricezaim\Sdk\Client;
+use Pricezaim\Sdk\Dto\Auction;
+use Pricezaim\Sdk\Dto\Bid;
+use Pricezaim\Sdk\Dto\Webhook;
 use Pricezaim\Sdk\Exception\ApiException;
 use Pricezaim\Sdk\Exception\ValidationException;
 use Psr\Http\Message\RequestInterface;
@@ -123,6 +126,51 @@ final class ClientTest extends TestCase
         $this->assertSame('POST', $request->getMethod());
         $this->assertSame('idem-1', $request->getHeaderLine('Idempotency-Key'));
         $this->assertStringContainsString('"amount":150000', (string) $request->getBody());
+    }
+
+    public function test_auction_dto_methods(): void
+    {
+        $mock = new MockHandler([
+            $this->jsonResponse(200, ['id' => 10, 'title' => 'One', 'status' => 'active']),
+            $this->jsonResponse(200, [
+                'data' => [['id' => 10, 'title' => 'One', 'status' => 'active']],
+                'meta' => ['total' => 1, 'current_page' => 1, 'last_page' => 1, 'per_page' => 15],
+            ]),
+        ]);
+
+        $client = $this->client($mock);
+
+        $auction = $client->auctions()->getDto(10);
+        $this->assertInstanceOf(Auction::class, $auction);
+        $this->assertSame(10, $auction->id);
+
+        $page = $client->auctions()->listDto();
+        $this->assertInstanceOf(Auction::class, $page->items()[0]);
+        $this->assertSame(1, $page->total());
+    }
+
+    public function test_bid_and_webhook_dto_methods(): void
+    {
+        $mock = new MockHandler([
+            $this->jsonResponse(201, ['success' => true, 'bid' => ['id' => 55, 'amount' => 100]]),
+            $this->jsonResponse(200, ['data' => [[
+                'id' => 7,
+                'url' => 'https://example.com/hook',
+                'events' => ['auction.started'],
+                'active' => true,
+            ]]]),
+        ]);
+
+        $client = $this->client($mock);
+
+        $bid = $client->bids()->placeDto(10, ['amount' => 100], 'idem-2');
+        $this->assertInstanceOf(Bid::class, $bid);
+        $this->assertSame(10, $bid->auctionId);
+
+        $webhooks = $client->webhooks()->listDto();
+        $this->assertCount(1, $webhooks);
+        $this->assertInstanceOf(Webhook::class, $webhooks[0]);
+        $this->assertSame(7, $webhooks[0]->id);
     }
 
     public function test_auction_update_with_files_uses_multipart_put(): void

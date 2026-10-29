@@ -17,6 +17,7 @@ declare(strict_types=1);
 require __DIR__.'/../vendor/autoload.php';
 
 use Pricezaim\Sdk\Client;
+use Pricezaim\Sdk\Dto\Auction;
 use Pricezaim\Sdk\Exception\ApiException;
 use Pricezaim\Sdk\Exception\TransportException;
 use Pricezaim\Sdk\Exception\ValidationException;
@@ -50,29 +51,23 @@ function markEventProcessed(PDO $pdo, string $eventId): void
 
 /**
  * Замените на реальную проверку клиента.
- *
- * @param array<string, mixed> $auction
  */
-function clientPasses(array $auction): bool
+function clientPasses(Auction $auction): bool
 {
-    if (($auction['status'] ?? null) !== 'active') {
+    if ($auction->status !== 'active' || ! $auction->canBid) {
         return false;
     }
 
-    if (($auction['can_bid'] ?? false) !== true) {
+    $profile = $auction->clientProfile;
+    if ($profile === null) {
         return false;
     }
 
-    $profile = $auction['client_profile'] ?? null;
-    if (! is_array($profile)) {
+    if (empty($profile->inn) && empty($profile->passportNumber)) {
         return false;
     }
 
-    if (empty($profile['inn']) && empty($profile['passport_number'])) {
-        return false;
-    }
-
-    $amount = (float) ($auction['required_amount'] ?? 0);
+    $amount = $auction->requiredAmount ?? 0;
 
     return $amount > 0 && $amount <= 3_000_000;
 }
@@ -80,13 +75,12 @@ function clientPasses(array $auction): bool
 /**
  * Замените на реальный расчёт ставки.
  *
- * @param array<string, mixed> $auction
  * @return array{amount: float, interest_rate: float, term: int, comment: string}
  */
-function makeBid(array $auction): array
+function makeBid(Auction $auction): array
 {
     return [
-        'amount' => (float) $auction['required_amount'],
+        'amount' => $auction->requiredAmount ?? 0,
         'interest_rate' => 19.5,
         'term' => 24,
         'comment' => 'Автоматическая ставка из SDK-примера',
@@ -169,7 +163,7 @@ $client = new Client($apiKey, [
 ]);
 
 try {
-    $auction = $client->auctions()->get($auctionId);
+    $auction = $client->auctions()->getDto($auctionId);
 } catch (TransportException $e) {
     error_log('API недоступен при чтении аукциона: '.$e->getMessage());
 
