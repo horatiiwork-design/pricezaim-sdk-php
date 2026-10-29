@@ -27,7 +27,7 @@ abstract class Resource
      * null-поля пропускаются, boolean приводятся к 1/0, файлы открываются как
      * бинарные потоки. Путь файла сохраняется для переоткрытия при автоповторе.
      *
-     * @param array<string, scalar|null> $fields Текстовые поля.
+     * @param array<string, scalar|array<array-key, scalar|null>|null> $fields Текстовые поля.
      * @param array<int, array{name?: string, path?: string, filename?: string}> $files Файлы.
      * @return array<int, array<string, mixed>> Части для Guzzle multipart.
      *
@@ -41,11 +41,18 @@ abstract class Resource
                 continue;
             }
 
-            if (is_bool($value)) {
-                $value = $value ? '1' : '0';
-            }
+            $values = is_array($value) ? $value : [$value];
+            foreach ($values as $item) {
+                if ($item === null) {
+                    continue;
+                }
 
-            $parts[] = ['name' => $name, 'contents' => (string) $value];
+                if (is_bool($item)) {
+                    $item = $item ? '1' : '0';
+                }
+
+                $parts[] = ['name' => $name, 'contents' => (string) $item];
+            }
         }
 
         foreach ($files as $file) {

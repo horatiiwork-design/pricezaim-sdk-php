@@ -126,6 +126,24 @@ final class ClientTest extends TestCase
         $this->assertStringContainsString('name="title"', (string) $request->getBody());
     }
 
+    public function test_create_auction_sends_repeated_form_fields(): void
+    {
+        $mock = new MockHandler([
+            $this->jsonResponse(201, ['id' => 10, 'title' => 'New']),
+        ]);
+
+        $this->client($mock)->auctions()->create([
+            'title' => 'New',
+            'photo_types[]' => ['passport', 'car'],
+            'client_marketing_agreed' => true,
+        ]);
+
+        $body = (string) $this->requests[0]->getBody();
+        $this->assertSame(2, substr_count($body, 'name="photo_types[]"'));
+        $this->assertStringContainsString('name="client_marketing_agreed"', $body);
+        $this->assertStringContainsString("\r\n\r\n1\r\n", $body);
+    }
+
     public function test_post_sends_idempotency_key_and_json_body(): void
     {
         $mock = new MockHandler([
